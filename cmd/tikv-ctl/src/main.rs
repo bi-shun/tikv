@@ -1911,7 +1911,7 @@ fn main() {
 
     // Initialize configuration and security manager.
     let cfg_path = matches.value_of("config");
-    let cfg = cfg_path.map_or_else(
+    let mut cfg = cfg_path.map_or_else(
         || {
             let mut cfg = TiKvConfig::default();
             cfg.log_level = tikv_util::logger::get_level_by_string("warn").unwrap();
@@ -2082,6 +2082,13 @@ fn main() {
 
     // Deal with all subcommands about db or host.
     let data_dir = matches.value_of("data_dir");
+    if let Some(dir) = data_dir {
+        cfg.storage.data_dir = dir.to_owned();
+        if cfg.raft_store.raftdb_path.is_empty() {
+            let default_raftdb_path  = canonicalize_sub_path(&cfg.storage.data_dir, "raft").unwrap();
+            cfg.raft_store.raftdb_path = default_raftdb_path;
+        }
+    }
     let skip_paranoid_checks = matches.is_present("skip-paranoid-checks");
     let host = matches.value_of("host");
 
